@@ -1,7 +1,7 @@
 #include <openssl/md5.h>
 
 #define hashTime 1000
-#define passwordLength 6
+#define passwordLength 7
 #define charsetSize 36
 u_char charset[charsetSize + 1] = "0123456789abcdefghijklmnopqrstuvwxyz";
 #define progress "||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||"
@@ -17,9 +17,7 @@ void printProgress(double percentage) {
 
 void reduction(u_char *res, const u_char *hash, u_int index) {
     for (auto i = 0; i < passwordLength; i++) {
-        u_char a = hash[i] ^hash[(i + 1) & 0xf] ^hash[(i + 2) & 0xf] ^hash[(i + 3) & 0xf];
-        u_char b = hash[index & 0xf] + hash[(index - 1) & 0xf] + hash[(index - 2) & 0xf] + hash[(index - 3) & 0xf] + hash[(index - 4) & 0xf];
-        res[i] = charset[(a + b) % charsetSize];
+        res[i] = charset[(hash[i] + index) % charsetSize];
     }
 }
 

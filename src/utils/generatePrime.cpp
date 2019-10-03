@@ -4,7 +4,7 @@
 auto generatePrime(unsigned long seed) {
     gmp_randclass randClass(gmp_randinit_default);
     randClass.seed(seed);
-    mpz_class res = randClass.get_z_bits(1024);
+    mpz_class res = randClass.get_z_bits(2048);
     if (res % 2 == 0) {
         res += 1;
     }

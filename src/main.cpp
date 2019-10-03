@@ -15,7 +15,6 @@
 using namespace std;
 
 #define Nr 4
-#define Mr 8
 
 #include "SPN/index.cpp"
 #include "SPN/enhanced.cpp"
@@ -118,13 +117,19 @@ int main() {
                 case 4: {
                     cout << "Enhanced SPN" << endl;
                     cout << "===========================" << endl;
-                    auto enhancedPlain = 0x12345678;
-                    long long enhancedKey = 0x123456783a94d63f;
-                    uint32_t enhancedRoundKey[Mr + 1];
-                    enhancedSPN::generateRoundKey(enhancedKey, enhancedRoundKey);
+                    auto plain = "00000000000000000000000000000000";
+                    auto key = "0000000000000000000000000000000000000000000000000000000000000000";
+                    uint8_t roundKey[16 * 15];
+                    enhancedSPN::generateRoundKey(hex2Bytes(key).data(), roundKey);
+                    auto bytesVector = hex2Bytes(plain);
+                    uint8_t bytes[bytesVector.size()];
+                    copy(bytesVector.begin(), bytesVector.end(), bytes);
                     auto start = chrono::system_clock::now();
-                    printf("Plain: %x\nKey: %llx\nCipher: %x\n", enhancedPlain, enhancedKey, enhancedSPN::SPN(enhancedPlain, enhancedRoundKey));
+                    enhancedSPN::SPN(bytes, roundKey);
                     auto end = chrono::system_clock::now();
+                    cout << "Plain: " << plain << endl
+                         << "Key: " << key << endl
+                         << "Cipher: " << bytes2Hex(bytes, bytesVector.size()) << endl;
                     cout << "Time: " << chrono::duration<double>(end - start).count() << "s" << endl;
                     cout << "===========================" << endl;
                     getchar();
@@ -153,22 +158,25 @@ int main() {
                     break;
                 }
                 case 7: {
-                    cout << "RSA" << endl;
+                    cout << "RSA 2048 (100 rounds)" << endl;
                     cout << "===========================" << endl;
                     auto message = 123456;
                     cout << "Message: " << message << endl;
                     auto cipher = rsa.encrypt(message);
                     cout << "Cipher: " << cipher << endl;
                     auto start = chrono::system_clock::now();
-                    cout << "Decrypted: " << rsa.decrypt(cipher) << endl;
+                    for (int i = 0; i < 100; i++) {
+                        rsa.decrypt(cipher);
+                    }
                     auto end = chrono::system_clock::now();
-                    cout << "Time: " << chrono::duration<double>(end - start).count() << "s" << endl;
+                    cout << "Time: " << chrono::duration<double>(end - start).count() / 100 << "s" << endl;
+                    cout << "Decrypted: " << rsa.decrypt(cipher) << endl;
                     cout << "===========================" << endl;
                     getchar();
                     break;
                 }
                 case 8: {
-                    cout << "RSA With Montgomery" << endl;
+                    cout << "RSA 2048 With Montgomery" << endl;
                     cout << "===========================" << endl;
                     auto message = 123456;
                     cout << "Message: " << message << endl;
@@ -183,16 +191,19 @@ int main() {
                     break;
                 }
                 case 9: {
-                    cout << "RSA With Chinese Remain Theorem" << endl;
+                    cout << "RSA 2048 With Chinese Remain Theorem (100 rounds)" << endl;
                     cout << "===========================" << endl;
                     auto message = 123456;
                     cout << "Message: " << message << endl;
                     auto cipher = rsa.encrypt(message);
                     cout << "Cipher: " << cipher << endl;
                     auto start = chrono::system_clock::now();
-                    cout << "Decrypted: " << rsa.decryptCRT(cipher) << endl;
+                    for (int i = 0; i < 100; i++) {
+                        rsa.decryptCRT(cipher);
+                    }
                     auto end = chrono::system_clock::now();
-                    cout << "Time: " << chrono::duration<double>(end - start).count() << "s" << endl;
+                    cout << "Time: " << chrono::duration<double>(end - start).count() / 100 << "s" << endl;
+                    cout << "Decrypted: " << rsa.decryptCRT(cipher) << endl;
                     cout << "===========================" << endl;
                     getchar();
                     break;
@@ -254,7 +265,8 @@ int main() {
                     generateTable(10000000);
                     auto end = chrono::system_clock::now();
                     cout << "Time: " << chrono::duration<double>(end - start).count() << "s" << endl;
-                    cout << "===========================" << endl;getchar();
+                    cout << "===========================" << endl;
+                    getchar();
                     getchar();
                     break;
                 }

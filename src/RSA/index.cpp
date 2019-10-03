@@ -24,18 +24,18 @@ struct SimpleRSA {
     }
 
     auto decryptMont(const mpz_class &c) {
-        return montExp(c, d, n);
+        return montExp2(c, d, n);
     }
 
     mpz_class decryptCRT(const mpz_class &c) {
         mpz_class m1 = modExp(c, dp, p);
         mpz_class m2 = modExp(c, dq, q);
-        mpz_class h;
-        if (m1 < m2) {
-            h = qi * (m1 + ql - m2) % p;
-        } else {
-            h = qi * (m1 - m2) % p;
-        }
+        mpz_class h = qi * (m1 - m2) % p;
+//        if (m1 < m2) {
+//            h = qi * (m1 + ql - m2) % p;
+//        } else {
+//            h = qi * (m1 - m2) % p;
+//        }
         return m2 + h * q;
     }
 
