@@ -210,9 +210,9 @@ int main() {
                 case 10: {
                     cout << "AES" << endl;
                     cout << "===========================" << endl;
-                    u_char aesIv[16];
+                    unsigned char aesIv[16];
                     RAND_bytes(aesIv, 16);
-                    u_char aesKey[32];
+                    unsigned char aesKey[32];
                     RAND_bytes(aesKey, 32);
                     string plaintext = "test aes";
                     cout << "Plaintext: " << plaintext << endl;
@@ -238,7 +238,7 @@ int main() {
                     stringstream buffer;
                     buffer << plainFile.rdbuf();
                     cout << "Loaded File." << endl;
-                    u_char aesIv[16];
+                    unsigned char aesIv[16];
                     RAND_bytes(aesIv, 16);
                     SimpleEC ec1;
                     SimpleEC ec2;

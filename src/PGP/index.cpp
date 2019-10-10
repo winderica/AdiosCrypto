@@ -86,7 +86,7 @@ class SimpleAES {
     static const int BLOCK_SIZE = 16;
 
 public:
-    static auto encrypt(const string &plain, u_char *key, u_char *iv) {
+    static auto encrypt(const string &plain, unsigned char *key, unsigned char *iv) {
         string cipher;
         unique_ptr<EVP_CIPHER_CTX, decltype(&::EVP_CIPHER_CTX_free)> ctx(EVP_CIPHER_CTX_new(), EVP_CIPHER_CTX_free);
         int rc = EVP_EncryptInit_ex(ctx.get(), EVP_aes_256_cbc(), nullptr, key, iv);
@@ -95,18 +95,18 @@ public:
         cipher.resize(plain.size() + BLOCK_SIZE);
         int out_len1;
 
-        rc = EVP_EncryptUpdate(ctx.get(), (u_char *) &cipher[0], &out_len1, (u_char *) plain.c_str(), plain.size());
+        rc = EVP_EncryptUpdate(ctx.get(), (unsigned char *) &cipher[0], &out_len1, (unsigned char *) plain.c_str(), plain.size());
         assert(rc == 1 && "EVP_EncryptUpdate failed");
 
         int out_len2;
-        rc = EVP_EncryptFinal_ex(ctx.get(), (u_char *) &cipher[0] + out_len1, &out_len2);
+        rc = EVP_EncryptFinal_ex(ctx.get(), (unsigned char *) &cipher[0] + out_len1, &out_len2);
         assert(rc == 1 && "EVP_EncryptFinal_ex failed");
 
         cipher.resize(out_len1 + out_len2);
         return cipher;
     }
 
-    static auto decrypt(const string &cipher, u_char *key, u_char *iv) {
+    static auto decrypt(const string &cipher, unsigned char *key, unsigned char *iv) {
         string plain;
         unique_ptr<EVP_CIPHER_CTX, decltype(&::EVP_CIPHER_CTX_free)> ctx(EVP_CIPHER_CTX_new(), EVP_CIPHER_CTX_free);
         int rc = EVP_DecryptInit_ex(ctx.get(), EVP_aes_256_cbc(), nullptr, key, iv);
@@ -115,11 +115,11 @@ public:
         plain.resize(cipher.size());
         int out_len1;
 
-        rc = EVP_DecryptUpdate(ctx.get(), (u_char *) &plain[0], &out_len1, (u_char *) cipher.c_str(), cipher.size());
+        rc = EVP_DecryptUpdate(ctx.get(), (unsigned char *) &plain[0], &out_len1, (unsigned char *) cipher.c_str(), cipher.size());
         assert(rc == 1 && "EVP_DecryptUpdate failed");
 
         int out_len2;
-        rc = EVP_DecryptFinal_ex(ctx.get(), (u_char *) &plain[0] + out_len1, &out_len2);
+        rc = EVP_DecryptFinal_ex(ctx.get(), (unsigned char *) &plain[0] + out_len1, &out_len2);
         assert(rc == 1 && "EVP_DecryptFinal_ex failed");
 
         plain.resize(out_len1 + out_len2);
@@ -232,7 +232,7 @@ public:
     static auto sign(const string &message, const BIGNUM *privateKey) {
         auto key = EC_KEY_new_by_curve_name(NID_X9_62_prime256v1);
         EC_KEY_set_private_key(key, privateKey);
-        return ECDSA_do_sign((u_char *) message.c_str(), message.length(), key);
+        return ECDSA_do_sign((unsigned char *) message.c_str(), message.length(), key);
     }
 
     static auto verify(const string &message, BIGNUM *r, BIGNUM *s, EC_POINT *publicKey) {
@@ -240,16 +240,16 @@ public:
         ECDSA_SIG_set0(sig, r, s);
         auto key = EC_KEY_new_by_curve_name(NID_X9_62_prime256v1);
         EC_KEY_set_public_key(key, publicKey);
-        return ECDSA_do_verify((u_char *) message.c_str(), message.length(), sig, key) == 1;
+        return ECDSA_do_verify((unsigned char *) message.c_str(), message.length(), sig, key) == 1;
     }
 };
 
-auto encryptPGP(const string& message, EC_POINT *G, EC_POINT *Pa, const BIGNUM *privateKey, u_char *iv) {
+auto encryptPGP(const string& message, EC_POINT *G, EC_POINT *Pa, const BIGNUM *privateKey, unsigned char *iv) {
     auto compressed = Compress::compress(message);
     auto signedDigest = SimpleEC::sign(compressed, privateKey);
     compressed += BN_bn2hex(ECDSA_SIG_get0_r(signedDigest));
     compressed += BN_bn2hex(ECDSA_SIG_get0_s(signedDigest));
-    u_char key[32];
+    unsigned char key[32];
     auto randomKey = SimpleEC::getRandomKey();
     BN_bn2bin(SimpleEC::getXY(EC_KEY_get0_public_key(randomKey)).first, key);
     auto cipher = SimpleAES::encrypt(compressed, key, iv);
@@ -259,7 +259,7 @@ auto encryptPGP(const string& message, EC_POINT *G, EC_POINT *Pa, const BIGNUM *
     return cipher + BN_bn2hex(encryptedP.first) + BN_bn2hex(encryptedP.second) + BN_bn2hex(encryptedC.first) + BN_bn2hex(encryptedC.second);
 }
 
-auto decryptPGP(const string &encrypted, const BIGNUM *Na, EC_POINT *publicKey, u_char *iv) {
+auto decryptPGP(const string &encrypted, const BIGNUM *Na, EC_POINT *publicKey, unsigned char *iv) {
     try {
         auto length = encrypted.length();
         auto cipher = encrypted.substr(0, length - 64 * 4);
@@ -275,7 +275,7 @@ auto decryptPGP(const string &encrypted, const BIGNUM *Na, EC_POINT *publicKey, 
         BN_hex2bn(&pY, PY.c_str());
         BN_hex2bn(&cX, CX.c_str());
         BN_hex2bn(&cY, CY.c_str());
-        u_char key[32];
+        unsigned char key[32];
         auto encryptedKey = pair(SimpleEC::setXY(pX, pY), SimpleEC::setXY(cX, cY));
         BN_bn2bin(SimpleEC::getXY(SimpleEC::decrypt(encryptedKey, Na)).first, key);
         auto decrypted = SimpleAES::decrypt(cipher, key, iv);
