@@ -15,7 +15,7 @@ void printProgress(double percentage) {
     fflush(stdout);
 }
 
-void reduction(unsigned char *res, const unsigned char *hash, u_int i) {
+void reduction(unsigned char *res, const unsigned char *hash, unsigned int i) {
     for (auto j = 0; j < passwordLength; j++) {
         unsigned char a = hash[j] ^hash[j + 1] ^hash[j + 2] ^hash[j + 3];
         unsigned char b = hash[i & 0xf];

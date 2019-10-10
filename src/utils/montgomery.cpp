@@ -57,7 +57,9 @@ mpz_class montExp2(mpz_class a, mpz_class b, mpz_class n) {
         k += 2;
         t >>= 1;
     }
-    mpz_class nn = -modInv(n, 0x100000000);
+    mpz_class u = 1;
+    u <<= 32;
+    mpz_class nn = -modInv(n, u);
     mpz_class A = a * r % n;
     mpz_class prod = r;
 
