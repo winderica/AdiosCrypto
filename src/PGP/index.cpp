@@ -16,17 +16,17 @@ public:
         zs.next_in = (Bytef *) str.data();
         zs.avail_in = str.size();
         int ret;
-        char outbuffer[32768];
-        string outstring;
+        char buf[32768];
+        string res;
 
         do {
-            zs.next_out = reinterpret_cast<Bytef *>(outbuffer);
-            zs.avail_out = sizeof(outbuffer);
+            zs.next_out = reinterpret_cast<Bytef *>(buf);
+            zs.avail_out = sizeof(buf);
 
             ret = deflate(&zs, Z_FINISH);
 
-            if (outstring.size() < zs.total_out) {
-                outstring.append(outbuffer, zs.total_out - outstring.size());
+            if (res.size() < zs.total_out) {
+                res.append(buf, zs.total_out - res.size());
             }
         } while (ret == Z_OK);
 
@@ -38,7 +38,7 @@ public:
             throw (runtime_error(oss.str()));
         }
 
-        return outstring;
+        return res;
     }
 
     static auto decompress(const string &str) {
@@ -53,17 +53,17 @@ public:
         zs.avail_in = str.size();
 
         int ret;
-        char buffer[32768];
+        char buf[32768];
         string res;
 
         do {
-            zs.next_out = reinterpret_cast<Bytef *>(buffer);
-            zs.avail_out = sizeof(buffer);
+            zs.next_out = reinterpret_cast<Bytef *>(buf);
+            zs.avail_out = sizeof(buf);
 
             ret = inflate(&zs, 0);
 
             if (res.size() < zs.total_out) {
-                res.append(buffer, zs.total_out - res.size());
+                res.append(buf, zs.total_out - res.size());
             }
 
         } while (ret == Z_OK);
@@ -149,14 +149,14 @@ public:
         BIO_set_fp(out, stdout, BIO_NOCLOSE);
     }
 
-    static EC_KEY *getRandomKey() {
+    static auto getRandomKey() {
         auto randKey = EC_KEY_new_by_curve_name(NID_X9_62_prime256v1);
         EC_KEY_generate_key(randKey);
 
         return randKey;
     }
 
-    pair<EC_POINT *, EC_POINT *> getPublicKey() {
+    auto getPublicKey() {
         auto G = EC_POINT_new(group);
         EC_POINT_copy(G, EC_KEY_get0_public_key(ecKey));
 
@@ -166,23 +166,23 @@ public:
         return pair(G, Pa);
     }
 
-    const BIGNUM *getPrivateKey() {
+    auto getPrivateKey() {
         return EC_KEY_get0_private_key(ecKey);
     }
 
-    static pair<BIGNUM *, BIGNUM *> getXY(const EC_POINT *point) {
+    static auto getXY(const EC_POINT *point) {
         BIGNUM *x_a = BN_new(), *y_a = BN_new();
         EC_POINT_get_affine_coordinates_GFp(group, point, x_a, y_a, ctx);
         return pair(x_a, y_a);
     }
 
-    static EC_POINT *setXY(BIGNUM *x, BIGNUM *y) {
+    static auto setXY(BIGNUM *x, BIGNUM *y) {
         EC_POINT *point = EC_POINT_new(group);
         EC_POINT_set_affine_coordinates(group, point, x, y, ctx);
         return point;
     }
 
-    static pair<EC_POINT *, EC_POINT *> encrypt(const EC_POINT *M, EC_POINT *G, EC_POINT *Pa, const BIGNUM *k) {
+    static auto encrypt(const EC_POINT *M, EC_POINT *G, EC_POINT *Pa, const BIGNUM *k) {
         EC_POINT *P = EC_POINT_new(group), *C = EC_POINT_new(group);
         EC_POINT_mul(group, P, nullptr, G, k, ctx);
 
@@ -260,34 +260,38 @@ auto encryptPGP(const string& message, EC_POINT *G, EC_POINT *Pa, const BIGNUM *
 }
 
 auto decryptPGP(const string &encrypted, const BIGNUM *Na, EC_POINT *publicKey, u_char *iv) {
-    auto length = encrypted.length();
-    auto cipher = encrypted.substr(0, length - 64 * 4);
-    auto PX = encrypted.substr(length - 64 * 4, 64);
-    auto PY = encrypted.substr(length - 64 * 3, 64);
-    auto CX = encrypted.substr(length - 64 * 2, 64);
-    auto CY = encrypted.substr(length - 64 * 1, 64);
-    BIGNUM *pX = BN_new();
-    BIGNUM *pY = BN_new();
-    BIGNUM *cX = BN_new();
-    BIGNUM *cY = BN_new();
-    BN_hex2bn(&pX, PX.c_str());
-    BN_hex2bn(&pY, PY.c_str());
-    BN_hex2bn(&cX, CX.c_str());
-    BN_hex2bn(&cY, CY.c_str());
-    u_char key[32];
-    auto encryptedKey = pair(SimpleEC::setXY(pX, pY), SimpleEC::setXY(cX, cY));
-    BN_bn2bin(SimpleEC::getXY(SimpleEC::decrypt(encryptedKey, Na)).first, key);
-    auto decrypted = SimpleAES::decrypt(cipher, key, iv);
-    auto compressed = decrypted.substr(0, decrypted.length() - 64 * 2);
-    auto digestR = decrypted.substr(decrypted.length() - 64 * 2, 64);
-    auto digestS = decrypted.substr(decrypted.length() - 64 * 1, 64);
-    BIGNUM *r = BN_new();
-    BIGNUM *s = BN_new();
-    BN_hex2bn(&r, digestR.c_str());
-    BN_hex2bn(&s, digestS.c_str());
-    if (SimpleEC::verify(compressed, r, s, publicKey)) {
-        return Compress::decompress(compressed);
-    } else {
-        throw runtime_error("Verify failed");
+    try {
+        auto length = encrypted.length();
+        auto cipher = encrypted.substr(0, length - 64 * 4);
+        auto PX = encrypted.substr(length - 64 * 4, 64);
+        auto PY = encrypted.substr(length - 64 * 3, 64);
+        auto CX = encrypted.substr(length - 64 * 2, 64);
+        auto CY = encrypted.substr(length - 64 * 1, 64);
+        BIGNUM *pX = BN_new();
+        BIGNUM *pY = BN_new();
+        BIGNUM *cX = BN_new();
+        BIGNUM *cY = BN_new();
+        BN_hex2bn(&pX, PX.c_str());
+        BN_hex2bn(&pY, PY.c_str());
+        BN_hex2bn(&cX, CX.c_str());
+        BN_hex2bn(&cY, CY.c_str());
+        u_char key[32];
+        auto encryptedKey = pair(SimpleEC::setXY(pX, pY), SimpleEC::setXY(cX, cY));
+        BN_bn2bin(SimpleEC::getXY(SimpleEC::decrypt(encryptedKey, Na)).first, key);
+        auto decrypted = SimpleAES::decrypt(cipher, key, iv);
+        auto compressed = decrypted.substr(0, decrypted.length() - 64 * 2);
+        auto digestR = decrypted.substr(decrypted.length() - 64 * 2, 64);
+        auto digestS = decrypted.substr(decrypted.length() - 64 * 1, 64);
+        BIGNUM *r = BN_new();
+        BIGNUM *s = BN_new();
+        BN_hex2bn(&r, digestR.c_str());
+        BN_hex2bn(&s, digestS.c_str());
+        if (SimpleEC::verify(compressed, r, s, publicKey)) {
+            return Compress::decompress(compressed);
+        } else {
+            throw runtime_error("Verify failed");
+        }
+    } catch (...) {
+        throw runtime_error("Failed to decrypt");
     }
 }

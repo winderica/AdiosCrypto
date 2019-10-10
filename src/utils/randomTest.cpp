@@ -10,10 +10,9 @@ auto hex2Bytes(const string &hex) {
     return bytes;
 }
 
-char hexArray[] = {'0', '1', '2', '3', '4', '5', '6', '7',
-                   '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
+char hexArray[] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
 
-string bytes2Hex(const uint8_t bytes[], unsigned long size) {
+auto bytes2Hex(const uint8_t bytes[], unsigned long size) {
     string s(size * 2, ' ');
     for (unsigned long i = 0; i < size; ++i) {
         s[2 * i] = hexArray[(bytes[i] & 0xF0) >> 4];
@@ -42,7 +41,7 @@ auto split(string str) {
     return res;
 }
 
-int randomTest() {
+auto randomTest() {
     uint16_t key[Nr + 1];
     SPN::generateRoundKey(0x3a94d63f, key);
     ifstream plaintext;
@@ -59,7 +58,6 @@ int randomTest() {
     });
     plaintext.close();
     cipher.close();
-    return 0;
 }
 
 auto getCTR(uint8_t counter[], int n) {
@@ -75,9 +73,9 @@ auto addCTR(uint8_t counter[], const char cipher[]) {
     }
 }
 
-int randomTestEnhanced() {
+auto randomTestEnhanced() {
     auto key = "0000000000000000000000000000000000000000000000000000000000000000";
-    uint8_t roundKey[16 * 15];
+    uint8_t roundKey[16 * (Mr + 1)];
     enhancedSPN::generateRoundKey(hex2Bytes(key).data(), roundKey);
     ifstream plaintext;
     ofstream cipher;
@@ -98,5 +96,4 @@ int randomTestEnhanced() {
     }
     plaintext.close();
     cipher.close();
-    return 0;
 }

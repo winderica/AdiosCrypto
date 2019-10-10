@@ -1,7 +1,7 @@
 #pragma once
 #include "millerRabin.cpp"
 
-auto generatePrime(unsigned long seed) {
+auto generatePrime(int seed) {
     gmp_randclass randClass(gmp_randinit_default);
     randClass.seed(seed);
     mpz_class res = randClass.get_z_bits(2048);

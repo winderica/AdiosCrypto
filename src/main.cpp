@@ -1,4 +1,3 @@
-#include <algorithm>
 #include <bitset>
 #include <vector>
 #include <tuple>
@@ -6,15 +5,15 @@
 #include <fstream>
 #include <sstream>
 #include <chrono>
-#include <random>
 #include <gmpxx.h>
 #include <memory>
 #include <cassert>
-#include <iomanip>
+#include <random>
 
 using namespace std;
 
 #define Nr 4
+#define Mr 14
 
 #include "SPN/index.cpp"
 #include "SPN/enhanced.cpp"
@@ -82,7 +81,7 @@ int main() {
                     auto T = 8000;
                     vector<pair<uint16_t, uint16_t>> pairs;
                     for (int i = 0; i < T; i++) {
-                        uint16_t x = random() % 0xffff;
+                        uint16_t x = randMT() % 0xffff;
                         pairs.emplace_back(x, SPN::SPN(x, roundKey));
                     }
                     auto start = chrono::system_clock::now();
@@ -102,7 +101,7 @@ int main() {
                     cout << "===========================" << endl;
                     vector<tuple<uint16_t, uint16_t, uint16_t, uint16_t>> tuples;
                     for (int i = 0; i < T; i++) {
-                        uint16_t x = random() % 0xffff;
+                        uint16_t x = randMT() % 0xffff;
                         uint16_t y = x ^0x0b00;
                         tuples.emplace_back(x, SPN::SPN(x, roundKey), y, SPN::SPN(y, roundKey));
                     }
@@ -119,7 +118,7 @@ int main() {
                     cout << "===========================" << endl;
                     auto plain = "00000000000000000000000000000000";
                     auto key = "0000000000000000000000000000000000000000000000000000000000000000";
-                    uint8_t roundKey[16 * 15];
+                    uint8_t roundKey[16 * (Mr + 1)];
                     enhancedSPN::generateRoundKey(hex2Bytes(key).data(), roundKey);
                     auto bytesVector = hex2Bytes(plain);
                     uint8_t bytes[bytesVector.size()];
@@ -160,7 +159,7 @@ int main() {
                 case 7: {
                     cout << "RSA 2048 (100 rounds)" << endl;
                     cout << "===========================" << endl;
-                    auto message = 123456;
+                    auto message = randMT();
                     cout << "Message: " << message << endl;
                     auto cipher = rsa.encrypt(message);
                     cout << "Cipher: " << cipher << endl;
@@ -178,7 +177,7 @@ int main() {
                 case 8: {
                     cout << "RSA 2048 With Montgomery" << endl;
                     cout << "===========================" << endl;
-                    auto message = 123456;
+                    auto message = randMT();
                     cout << "Message: " << message << endl;
                     auto cipher = rsa.encrypt(message);
                     cout << "Cipher: " << cipher << endl;
@@ -193,7 +192,7 @@ int main() {
                 case 9: {
                     cout << "RSA 2048 With Chinese Remain Theorem (100 rounds)" << endl;
                     cout << "===========================" << endl;
-                    auto message = 123456;
+                    auto message = randMT();
                     cout << "Message: " << message << endl;
                     auto cipher = rsa.encrypt(message);
                     cout << "Cipher: " << cipher << endl;
@@ -266,7 +265,6 @@ int main() {
                     auto end = chrono::system_clock::now();
                     cout << "Time: " << chrono::duration<double>(end - start).count() << "s" << endl;
                     cout << "===========================" << endl;
-                    getchar();
                     getchar();
                     break;
                 }

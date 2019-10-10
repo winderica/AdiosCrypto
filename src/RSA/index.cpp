@@ -24,7 +24,7 @@ struct SimpleRSA {
     }
 
     auto decryptMont(const mpz_class &c) {
-        return montExp2(c, d, n);
+        return montExp(c, d, n);
     }
 
     mpz_class decryptCRT(const mpz_class &c) {
@@ -40,9 +40,8 @@ struct SimpleRSA {
     }
 
     void generateParams() {
-        srandom(time(nullptr));
-        p = generatePrime(random());
-        q = generatePrime(random());
+        p = generatePrime(randMT());
+        q = generatePrime(randMT());
         pi = modInv(p, q);
         qi = modInv(q, p);
         ql = q / p * p;

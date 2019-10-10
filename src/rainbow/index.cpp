@@ -15,21 +15,22 @@ void printProgress(double percentage) {
     fflush(stdout);
 }
 
-void reduction(u_char *res, const u_char *hash, u_int index) {
-    for (auto i = 0; i < passwordLength; i++) {
-        res[i] = charset[(hash[i] + index) % charsetSize];
+void reduction(u_char *res, const u_char *hash, u_int i) {
+    for (auto j = 0; j < passwordLength; j++) {
+        u_char a = hash[j] ^hash[j + 1] ^hash[j + 2] ^hash[j + 3];
+        u_char b = hash[i & 0xf];
+        res[j] = charset[(a + b) % charsetSize];
     }
 }
 
 void generateTable(int total) {
     cout << endl << "Generating table." << endl;
-    srandom(time(nullptr));
     auto fp = fopen("../examples/table.txt", "wb");
     u_char head[passwordLength], tail[passwordLength], md5[MD5_DIGEST_LENGTH];
     for (auto j = 0; j < total; j++) {
         printProgress((double) j / total);
         for (auto i = 0; i < passwordLength; i++) {
-            head[i] = tail[i] = charset[(random() + j) % charsetSize];
+            head[i] = tail[i] = charset[randMT() % charsetSize];
         }
         for (auto i = 0; i < hashTime; i++) {
             MD5(tail, passwordLength, md5);
@@ -42,7 +43,7 @@ void generateTable(int total) {
     fclose(fp);
 }
 
-bool findTable(const u_char *hash) {
+auto findTable(const u_char *hash) {
     FILE *fp = fopen("../examples/table.txt", "rb");
     u_char tail[passwordLength], res[passwordLength], md5[MD5_DIGEST_LENGTH], buf[passwordLength * 2];
     for (auto t = hashTime - 1; t >= 0; t--) {
@@ -83,12 +84,11 @@ bool findTable(const u_char *hash) {
 }
 
 void bruteforce() {
-    srandom(time(nullptr));
     auto success = 0;
     for (auto i = 0; i < 10; i++) {
         u_char password[passwordLength], hash[MD5_DIGEST_LENGTH];
-        for (auto j = 0; j < passwordLength; j++) {
-            password[j] = charset[(j + random()) % charsetSize];
+        for (unsigned char &j : password) {
+            j = charset[randMT() % charsetSize];
         }
         MD5(password, passwordLength, hash);
         cout << "Round " << i + 1 << ": password " << string((char *) password, passwordLength) << " hash ";

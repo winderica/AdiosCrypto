@@ -8,7 +8,11 @@ auto enumerate(const vector<pair<uint16_t, uint16_t>> &pairs, const pair<uint16_
             SPN::generateRoundKey((i << 12) + (j << 4) + known, key);
             if (SPN::SPN(pairs[0].first, key) == pairs[0].second) {
                 if (SPN::SPN(pairs[1].first, key) == pairs[1].second) {
-                    return (i << 12) + (j << 4) + known;
+                    if (SPN::SPN(pairs[2].first, key) == pairs[2].second) {
+                        if (SPN::SPN(pairs[3].first, key) == pairs[3].second) {
+                            return (i << 12) + (j << 4) + known;
+                        }
+                    }
                 }
             }
         }
@@ -92,5 +96,7 @@ auto differential(const vector<tuple<uint16_t, uint16_t, uint16_t, uint16_t>> &t
     vector<pair<uint16_t, uint16_t>> pairs;
     pairs.emplace_back(get<0>(tuples[0]), get<1>(tuples[0]));
     pairs.emplace_back(get<2>(tuples[0]), get<3>(tuples[0]));
+    pairs.emplace_back(get<0>(tuples[1]), get<1>(tuples[1]));
+    pairs.emplace_back(get<2>(tuples[1]), get<3>(tuples[1]));
     return enumerate(pairs, keyPair);
 }

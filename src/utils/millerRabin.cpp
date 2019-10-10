@@ -1,12 +1,10 @@
 #pragma once
 
 #include "./modExp.cpp"
+#include "./randMT.cpp"
 
 auto millerRabin(mpz_class n, int k) {
-    if (n <= 2) {
-        return false;
-    }
-    if (n % 2 == 0) {
+    if (n <= 2 || n % 2 == 0) {
         return false;
     }
     mpz_class r = 1;
@@ -16,9 +14,9 @@ auto millerRabin(mpz_class n, int k) {
         r <<= 1;
     }
     gmp_randclass randClass(gmp_randinit_default);
-    randClass.seed(random());
+    randClass.seed(randMT());
     for (auto i = 0; i < k; i++) {
-        auto a = randClass.get_z_range(n - 4) + 2;
+        mpz_class a = randClass.get_z_range(n - 4) + 2;
         auto x = modExp(a, d, n);
         if (x == 1 || x == n - 1) {
             continue;
